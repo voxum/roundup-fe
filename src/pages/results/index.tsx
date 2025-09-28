@@ -6,7 +6,7 @@ import React from "react";
 import { BarLoader } from 'react-spinners';
 import type { ColumnDef } from "@tanstack/table-core";
 
-const card_id = "scorecard_entry_o8mthw2mcvzxw24irdn28j86";
+// const card_id = "scorecard_entry_o8mthw2mcvzxw24irdn28j86";
 const snakeCaseToColumnHeader = (snakeCaseString: string) => {
   if (!snakeCaseString) {
     return "";
@@ -30,14 +30,21 @@ interface HoleScore {
 }
 
 interface ScoreEntry {
-  scores: {
-    holeScores: HoleScore[];
+  scores?: {
+    hole_scores?: HoleScore[];
     [key: string]: unknown;
   };
   date?: string;
+  start_date?: string;
   card_id?: string;
   user_fullname?: string;
+  full_name?: string;
   username?: string;
+  hole_scores?: Array<{
+    strokes: number;
+    hole: number;
+    [key: string]: unknown;
+  }>;
   [key: string]: unknown;
 }
 
@@ -60,22 +67,33 @@ const parseData = (data: ScoreEntry[]): ParsedData => {
     return { keys: [], rows: [], data: [] };
   }
   
-  // Transform the data to match our TableData interface
   const transformedData = data.map((entry: ScoreEntry): TableData => {
-    const total_strokes = Array.isArray(entry.scores?.holeScores)
-      ? entry.scores.holeScores.reduce((sum: number, hole: HoleScore) => sum + (hole.strokes || 0), 0)
-      : 0;
-
+    let totalStrokes = 0;
+    
+    if (Array.isArray(entry.scores?.hole_scores)) {
+      totalStrokes = entry.scores.hole_scores.reduce(
+        (sum: number, hole: HoleScore) => sum + (hole.strokes || 0), 
+        0
+      );
+    } else if (Array.isArray(entry.hole_scores)) {
+      totalStrokes = entry.hole_scores.reduce(
+        (sum: number, hole: HoleScore) => sum + (hole.strokes || 0), 
+        0
+      );
+    }
+    const date = entry.start_date || entry.date || '';
+    
     return {
-      start_date: typeof entry.start_date === "string" ? entry.start_date : undefined,
+      start_date: typeof date === "string" ? date : undefined,
       card_id: entry.card_id,
-      user_fullname: entry.user_fullname,
-      username: entry.username,
-      total_strokes: total_strokes
+      user_fullname: entry.user_fullname || entry.full_name || '',
+      username: entry.username || '',
+      total_strokes: totalStrokes
     };
   });
 
-  const keys = Object.keys(transformedData[0]).map(snakeCaseToColumnHeader);
+  const keys = transformedData.length > 0 ? 
+    Object.keys(transformedData[0]).map(snakeCaseToColumnHeader) : [];
   
   const rows = transformedData.map((entry) => 
     Object.values(entry).map(value => {
@@ -83,7 +101,6 @@ const parseData = (data: ScoreEntry[]): ParsedData => {
       return typeof value === 'object' ? JSON.stringify(value) : value;
     })
   );
-
   return { keys, rows, data: transformedData };
 };
 
@@ -99,14 +116,12 @@ interface TableData {
 const ResultsPage = () => {
   const [loading, setLoading] = React.useState(true);
   const [data, setData] = React.useState<TableData[]>([]);
+  const [selectedDate, setSelectedDate] = React.useState<Date>(new Date());
+  const formattedDate = selectedDate.toISOString().split('T')[0];
   const columns: ColumnDef<TableData, unknown>[] = [
     {
       accessorKey: "start_date",
       header: "Date"
-    },
-    {
-      accessorKey: "card_id",
-      header: "Card ID"
     },
     {
       accessorKey: "user_fullname",
@@ -122,31 +137,32 @@ const ResultsPage = () => {
     }
   ]
   
-  useEffect(() => {
-    const fetchData = async () => {
-      console.log("Fetching Scores:");
-      try {
-        const response = await FetchScores(card_id);
-        console.log("API Response:", response);
-        
-        if (Array.isArray(response)) {
-          const parsedData = parseData(response);
-          console.log("Parsed Data:", parsedData);
-          setData(parsedData.data);
-        } else {
-          console.error("Unexpected response format:", response);
-          setData([]);
-        }
-      } catch (error) {
-        console.error("Error fetching scores:", error);
+  const fetchScoreData = async (date: string) => {
+    setLoading(true);
+    console.log("Fetching Scores for date:", date);
+    try {
+      const response = await FetchScores('', date);
+      console.log("API Response:", response);
+      
+      if (Array.isArray(response)) {
+        const parsedData = parseData(response);
+        console.log("Parsed Data:", parsedData);
+        setData(parsedData.data);
+      } else {
+        console.error("Unexpected response format:", response);
         setData([]);
-      } finally {
-        setLoading(false);
       }
-    };
+    } catch (error) {
+      console.error("Error fetching scores:", error);
+      setData([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchData();
-  }, []);
+  useEffect(() => {
+    fetchScoreData(formattedDate);
+  }, [formattedDate]);
 
   return (
     <div className="overflow-x-hidden">
@@ -159,7 +175,17 @@ const ResultsPage = () => {
           <>
           <div className="flex">
             <div className="ml-auto">
-              <DatePicker title="Round Date" default_date={new Date()} />
+              <DatePicker 
+                title="Round Date" 
+                default_date={selectedDate} 
+                changeHandler={(date) => {
+                  if (date) {
+                    setSelectedDate(date);
+                    const formattedDate = date.toISOString().split('T')[0];
+                    fetchScoreData(formattedDate);
+                  }
+                }} 
+              />
             </div>
           </div>
             <div className="overflow-x-auto">

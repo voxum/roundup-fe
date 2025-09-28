@@ -12,9 +12,10 @@ import { ChevronDownIcon } from "lucide-react"
 interface DatePickerProps {
   title: string;
   default_date: Date | undefined;
+  changeHandler?: (date?: Date | undefined) => void;
 }
   
-const DatePicker = ({ title, default_date }: DatePickerProps) => {
+const DatePicker = ({ title, default_date, changeHandler }: DatePickerProps) => {
   const [open, setOpen] = React.useState(false)
   const [date, setDate] = React.useState<Date | undefined>(default_date)
   return (
@@ -41,6 +42,7 @@ const DatePicker = ({ title, default_date }: DatePickerProps) => {
             onSelect={(date) => {
               setDate(date)
               setOpen(false)
+              if (changeHandler) changeHandler(date)
             }}
           />
         </PopoverContent>

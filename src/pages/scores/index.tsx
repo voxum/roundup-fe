@@ -57,9 +57,9 @@ const Score = () => {
 
   useEffect(() => {
     if(scores?.length === usersRef.current?.length && ws) {
+      try{
       console.log("All scores received");
       console.log("Final scores:", scores);
-      // Make a request to back end to store scores
 
       toast("Card has been uploaded successfully! You can safely leave this page. ", {
           description: new Date().toLocaleTimeString(),
@@ -69,6 +69,18 @@ const Score = () => {
 
       const response = ScoreSubmission(scores!);
       console.log("Score submission response:", response);
+      } catch (error) {
+        console.error("Error submitting scores:", error);
+
+      toast("Error submitting scores", {
+          description: new Date().toLocaleTimeString(),
+          duration: 20000,
+          closeButton: true,
+      })
+      } finally {
+        ws.close();
+        setWs(null);
+      }
     }
   }, [scores]);
 
@@ -149,9 +161,10 @@ const Score = () => {
               console.log('User fields:', users_array);
               setUsers(prevUsers => {
                 const existingUsers = prevUsers || [];
-                const newUsers = users_array.map((user_fields: UserEntry) => ({
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const newUsers = users_array.map((user_fields: any) => ({
                   _id: user_fields._id,
-                  full_name: user_fields.full_name,
+                  full_name: user_fields.fullName,
                   name: user_fields.name,
                   username: user_fields.username
                 }));

@@ -25,6 +25,7 @@ interface UserEntry {
   name: string;
   username: string;
   has_checkin_today: number;
+  division: string;
 }
 
 export type { ObjectEntry, HoleScores, ScoreEntry, UserEntry };
