@@ -37,3 +37,41 @@ export async function FetchUsers(): Promise<UserEntry[]> {
   }
   return response.json();
 }
+
+export async function CreateUser(full_name: string, name: string, username: string) {
+  console.log("Creating user:", { full_name, name, username });
+  const response = await fetch(`${API_BASE_URL}/custom-users/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Token ${TOKEN}`,
+    },
+    body: JSON.stringify({ full_name, name, username }),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to create user');
+  }
+  return response.json();
+}
+
+export async function CheckInUser(username: string, action: string, full_name: string = '', name: string = '') {
+  const endpoint = action === 'check-in' ? '' : 'remove/';
+  const url = `${API_BASE_URL}/checkins/${endpoint}`;
+  const response = await fetch(url, {
+    method: action === 'check-in' ? 'POST' : 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Token ${TOKEN}`,
+    },
+    body: JSON.stringify({ 
+      username,
+      date: new Date().toISOString().split('T')[0],
+      full_name,
+      name
+    }),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to check in user');
+  }
+  return response.json();
+}

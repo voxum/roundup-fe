@@ -1,11 +1,12 @@
-import { Input } from "./ui/input";
-import { Button } from "./ui/button";
+// import { Input } from "./ui/input";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { useEffect, useState, useRef } from "react";
 import { IoCheckmarkCircleOutline } from "react-icons/io5";
 import { toast, Toaster } from "sonner"
-import type { ObjectEntry, ScoreEntry, UserEntry } from '../types';
-import { SubmitScores } from "../lib/api";
-import roundup from '../assets/roundup.png'
+import type { ObjectEntry, ScoreEntry, UserEntry } from '@/types';
+import { SubmitScores } from "@/lib/api";
+import roundup from '@/assets/roundup.png'
 
 const WS_MESSAGES = {
   CONNECT: '"{\\"msg\\":\\"connect\\",\\"version\\":\\"1\\",\\"support\\":[\\"1\\",\\"pre2\\",\\"pre1\\"]}"',
@@ -150,7 +151,7 @@ const Score = () => {
                 const existingUsers = prevUsers || [];
                 const newUsers = users_array.map((user_fields: UserEntry) => ({
                   _id: user_fields._id,
-                  fullName: user_fields.fullName,
+                  full_name: user_fields.full_name,
                   name: user_fields.name,
                   username: user_fields.username
                 }));
@@ -190,18 +191,18 @@ const Score = () => {
 
             if(parsed_inner_message.collection && parsed_inner_message.collection == "ScorecardEntry" && sent_card_message) {
               const new_score_card: ScoreEntry = {
-                cardId: parsed_inner_message.id,
-                startDate: parsed_inner_message.fields.startDate['$date'],
-                endDate: parsed_inner_message.fields.endDate['$date'],
-                layoutId: parsed_inner_message.fields.layoutId,
-                roundRating: parsed_inner_message.fields.roundRating,
-                holeScores: parsed_inner_message.fields.holeScores,
+                card_id: parsed_inner_message.id,
+                start_date: parsed_inner_message.fields.startDate['$date'],
+                end_date: parsed_inner_message.fields.endDate['$date'],
+                layout_id: parsed_inner_message.fields.layoutId,
+                round_rating: parsed_inner_message.fields.roundRating,
+                hole_scores: parsed_inner_message.fields.holeScores,
                 user: usersRef.current?.find(user => user._id === parsed_inner_message.fields.users[0]?.objectId) || null
               }
               console.log("New score card to add:", new_score_card);
               setScores(prevScores => {
                 const existingScores = prevScores || [];
-                const scoreExists = existingScores.some(score => score.cardId === new_score_card.cardId);
+                const scoreExists = existingScores.some(score => score.card_id === new_score_card.card_id);
                 if (!scoreExists) {
                   return [...existingScores, new_score_card];
                 }
@@ -244,15 +245,15 @@ return (
         <h3 className="text-lg font-bold mb-4">Round Scores</h3>
         <div className="max-h-[500px] overflow-y-auto space-y-3">
           {scores.map((score) => (
-            <div key={score.cardId} className="bg-white shadow-sm border border-gray-100 rounded-lg p-4 hover:shadow-md transition-shadow">
+            <div key={score.card_id} className="bg-white shadow-sm border border-gray-100 rounded-lg p-4 hover:shadow-md transition-shadow">
               <div className="flex flex-col gap-2">
                 {/* Header with player name and date */}
                 <div className="flex justify-between items-center border-b border-gray-100 pb-2">
                   <div className="font-semibold text-gray-900">
-                    {score.user?.fullName || score.user?.name || 'Unknown Player'}
+                    {score.user?.full_name || score.user?.name || 'Unknown Player'}
                   </div>
                   <div className="text-sm text-gray-500">
-                    {new Date(score.startDate).toLocaleDateString(undefined, {
+                    {new Date(score.start_date).toLocaleDateString(undefined, {
                       year: 'numeric',
                       month: 'short',
                       day: 'numeric'
@@ -266,12 +267,12 @@ return (
                   <div className="flex items-center gap-6">
                     <div className="flex flex-col">
                       <span className="text-sm text-gray-500"> Round Rating </span>
-                      <span className="font-bold text-blue-600">{Number(score.roundRating).toFixed(1)}</span>
+                      <span className="font-bold text-blue-600">{Number(score.round_rating).toFixed(1)}</span>
                     </div>
                     <div className="flex flex-col">
                       <span className="text-sm text-gray-500"> Strokes </span>
                       <span className="font-bold text-gray-900">
-                        {score.holeScores.reduce((total, hole) => total + hole.strokes + (hole.penalty || 0), 0)}
+                        {score.hole_scores.reduce((total, hole) => total + hole.strokes + (hole.penalty || 0), 0)}
                       </span>
                     </div>
                   </div>

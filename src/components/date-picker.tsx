@@ -9,13 +9,18 @@ import {
 } from "@/components/ui/popover"
 import { ChevronDownIcon } from "lucide-react"
 
-const DatePicker = () => {
+interface DatePickerProps {
+  title: string;
+  default_date: Date | undefined;
+}
+  
+const DatePicker = ({ title, default_date }: DatePickerProps) => {
   const [open, setOpen] = React.useState(false)
-  const [date, setDate] = React.useState<Date | undefined>(undefined)
+  const [date, setDate] = React.useState<Date | undefined>(default_date)
   return (
     <div className="flex flex-col gap-3">
       <Label htmlFor="date" className="px-1">
-        Round Date
+        {title}
       </Label>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
@@ -31,7 +36,7 @@ const DatePicker = () => {
         <PopoverContent className="w-auto overflow-hidden p-0" align="start">
           <Calendar
             mode="single"
-            selected={date}
+            selected={default_date || date}
             captionLayout="dropdown"
             onSelect={(date) => {
               setDate(date)

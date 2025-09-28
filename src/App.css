@@ -47,3 +47,7 @@ html, body {
   overflow-x: hidden;
   width: 100%;
 }
+
+th {
+  text-align: center !important;
+}

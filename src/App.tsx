@@ -1,5 +1,5 @@
 import './App.css'
-import Score from './components/score'
+import Score from './pages/scores'
 import ResultsPage from './pages/results'
 import CheckInPage from './pages/check-in';
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";

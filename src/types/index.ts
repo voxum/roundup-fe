@@ -10,20 +10,21 @@ interface HoleScores {
 }
 
 interface ScoreEntry {
-  cardId: string;
-  startDate: string;
-  endDate: string;
-  layoutId: string;
-  roundRating: string;
-  holeScores: HoleScores[];
+  card_id: string;
+  start_date: string;
+  end_date: string;
+  layout_id: string;
+  round_rating: string;
+  hole_scores: HoleScores[];
   user: UserEntry | null;
 }
 
-interface UserEntry{
+interface UserEntry {
   _id: string;
-  fullName: string;
+  full_name: string;
   name: string;
   username: string;
+  has_checkin_today: number;
 }
 
 export type { ObjectEntry, HoleScores, ScoreEntry, UserEntry };
