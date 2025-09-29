@@ -10,6 +10,7 @@ import { ArrowUpDown } from "lucide-react";
 import { CapitalizeWords } from "@/utils";
 import type { Event } from "@/types";
 
+
 const snakeCaseToColumnHeader = (snakeCaseString: string) => {
   if (!snakeCaseString) {
     return "";
@@ -110,7 +111,8 @@ const parseData = (data: ScoreEntry[], eventData: Event): ParsedData => {
       total_strokes: total_strokes,
       handicap: entry.handicap,
       final_score: total_strokes - (entry.handicap ? parseInt(entry.handicap) : 0),
-      best_on_score: best_on_score - 15 // Assuming par 15 for best on holes
+      best_on_score: best_on_score - 15, // Assuming par 15 for best on holes
+      division: entry.division,
     };
   });
 
@@ -132,6 +134,7 @@ interface TableData {
   total_strokes: number;
   handicap?: string;
   final_score?: number;
+  best_on_score?: number;
   [key: string]: string | number | undefined;
 }
 
@@ -143,6 +146,7 @@ const ResultsPage = () => {
   const formattedDate = selectedDate.toISOString().split('T')[0];
   const [eventData, setEventData] = React.useState<Event>({} as Event);
   const [dualWinners, setDualWinners] = React.useState<Record<string, TableData[]>>({});
+  const [bestOnWinners, setBestOnWinners] = React.useState<Record<string, TableData[]>>({});
 
   const columns: ColumnDef<TableData, unknown>[] = [
     {
@@ -222,6 +226,34 @@ const ResultsPage = () => {
             setDualWinners(prev => ({...prev, [dual]: [winner]}));
           }
         }
+       const bestOnWinnersLocal: Record<string, TableData[]> = {};
+      
+      for (const score of parsedData.data) {
+        const division = score.division ?? '';
+        
+        if (typeof score.best_on_score === 'number') {
+          if (!bestOnWinnersLocal[division]) {
+            // First player for this division
+            bestOnWinnersLocal[division] = [score];
+          } else {
+            const currentWinners = bestOnWinnersLocal[division];
+            const bestScore = currentWinners[0]?.best_on_score;
+            
+            if (typeof bestScore === 'number') {
+              if (score.best_on_score < bestScore) {
+                // New best score - replace all winners
+                bestOnWinnersLocal[division] = [score];
+              } else if (score.best_on_score === bestScore && currentWinners.length < 3) {
+                // Tied score and room for more winners
+                bestOnWinnersLocal[division] = [...currentWinners, score];
+              }
+            }
+          }
+        }
+      }
+      
+      // Set the state once with the complete object
+      setBestOnWinners(bestOnWinnersLocal);
       setTopSlug(bestPlayer);
       setPlayerDivisions(divisionData);
       } else {
@@ -234,6 +266,13 @@ const ResultsPage = () => {
     }
   };
 
+  const resetState = () => {
+    setPlayerDivisions({});
+    setTopSlug(undefined);
+    setDualWinners({});
+    setBestOnWinners({});
+  }
+
   useEffect(() => {
     fetchEventData()
   }, [formattedDate]);
@@ -245,6 +284,10 @@ const ResultsPage = () => {
   useEffect(() => {
     console.log("Dual Winners Updated:", dualWinners);
   }, [dualWinners]);
+
+  useEffect(() => {
+    console.log("Best On Winners Updated:", bestOnWinners);
+  }, [bestOnWinners]);
 
   return (
     <div className="overflow-x-hidden">
@@ -261,6 +304,7 @@ const ResultsPage = () => {
                 default_date={selectedDate} 
                 changeHandler={(date) => {
                   if (date) {
+                    resetState();
                     setSelectedDate(date);
                     const formattedDate = date.toISOString().split('T')[0];
                     fetchScoreData(formattedDate);
@@ -268,20 +312,31 @@ const ResultsPage = () => {
                 }} 
               />
             </div>
-            <div className="flex flex-col items-center mb-4">
-              <span className="font-medium text-lg">Top Slug</span>
-              <span className="text-md">{topSlug ? `${topSlug?.user_fullname} (${topSlug?.final_score})` : ''}</span>
-            </div>
-            <div className="flex flex-col items-center mb-4">
-              {Object.keys(dualWinners).length > 0 && <span className="font-medium text-lg">Duel of the Day Winners</span>}
-              {Object.entries(dualWinners).map(([duel, winners]) => (
-                <span key={duel} className="text-md">
-                  {CapitalizeWords(duel)}: {winners.map(winner => `${winner.user_fullname} (${winner.final_score})`).join(' & ')}
-                </span>
-              ))}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <div className="flex flex-col items-center">
+                {Object.keys(topSlug || {}).length > 0 && <span className="font-medium text-lg">Top Slug</span>}
+                <span className="text-md">{topSlug ? `${topSlug?.user_fullname} (${topSlug?.final_score})` : ''}</span>
+              </div>
+              
+              <div className="flex flex-col items-center">
+                {Object.keys(dualWinners).length > 0 && <span className="font-medium text-lg">Duel of the Day Winners</span>}
+                {Object.entries(dualWinners).map(([duel, winners]) => (
+                  <span key={duel} className="text-md">
+                    {CapitalizeWords(duel)}: {winners.map(winner => `${winner.user_fullname} (${winner.final_score})`).join(' & ')}
+                  </span>
+                ))}
+              </div>
+              
+              <div className="flex flex-col items-center">
+                {Object.keys(bestOnWinners).length > 0 && <span className="font-medium text-lg">Best On Winners</span>}
+                {Object.entries(bestOnWinners).map(([division, winners]) => (
+                  <span key={division} className="text-md">
+                    {CapitalizeWords(division)}: {winners.map(winner => `${winner.user_fullname} (${winner.best_on_score})`).join(' & ')}
+                  </span>
+                ))}
+              </div>
             </div>
             
-
           <div className="mt-4">
             <div className="space-y-8">
               {divisions.map((division) => (
