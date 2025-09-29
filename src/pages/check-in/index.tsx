@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown } from "lucide-react";
 import { CapitalizeWords } from "@/utils";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const CheckInPage = () => {
     const [players, setPlayers] = React.useState<UserEntry[]>([]);
@@ -57,10 +58,12 @@ const CheckInPage = () => {
             }
         }
     ];
-    const [newUser, setNewUser] = useState<{ full_name: string; name: string; username: string }>({
+    const [newUser, setNewUser] = useState<{ full_name: string; division: string; username: string; tag: string, handicap: number }>({
         full_name: '',
-        name: '',
-        username: ''
+        division: '',
+        username: '',
+        tag: '',
+        handicap: 0
     });
 
     const handleNewUserChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -160,51 +163,80 @@ const CheckInPage = () => {
                                 />
                             </div>
                             <div>
-                                <label htmlFor="name" className="block text-sm mb-1">Name</label>
-                                <Input
-                                    id="name"
-                                    name="name"
-                                    value={newUser.name}
-                                    onChange={handleNewUserChange}
-                                    placeholder="Name"
-                                    className="w-full"
-                                    required
-                                />
-                            </div>
-                            <div>
-                                <label htmlFor="username" className="block text-sm mb-1">Username</label>
+                                <label htmlFor="username" className="block text-sm mb-1">UDisc Username</label>
                                 <Input
                                     id="username"
                                     name="username"
                                     value={newUser.username}
                                     onChange={handleNewUserChange}
-                                    placeholder="Username"
+                                    placeholder="Udisc Username"
+                                    className="w-full"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label htmlFor="handicap" className="block text-sm mb-1">Handicap</label>
+                                <Input
+                                    id="handicap"
+                                    name="handicap"
+                                    value={newUser.handicap}
+                                    onChange={handleNewUserChange}
+                                    placeholder="Handicap"
+                                    className="w-full"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label htmlFor="division" className="block text-sm mb-1">Division</label>
+                                <Select
+                                    value={newUser.division}
+                                    onValueChange={(value: string) => setNewUser(prev => ({ ...prev, division: value }))}
+                                >
+                                    <SelectTrigger className="w-full">
+                                        <SelectValue placeholder="Select Division" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="recreational">{CapitalizeWords("recreational")}</SelectItem>
+                                        <SelectItem value="intermediate">{CapitalizeWords("intermediate")}</SelectItem>
+                                        <SelectItem value="advanced">{CapitalizeWords("advanced")}</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div>
+                                <label htmlFor="tag" className="block text-sm mb-1">Tag Number</label>
+                                <Input
+                                    id="tag"
+                                    name="tag"
+                                    value={newUser.tag}
+                                    onChange={handleNewUserChange}
+                                    placeholder="Tag Number"
                                     className="w-full"
                                     required
                                 />
                             </div>
                             <Button 
                                 onClick={async () => {
-                                    if (!newUser.name || !newUser.username) {
+                                    if (!newUser.full_name || !newUser.username) {
                                         alert("Name and Username are required");
                                         return;
                                     }
                                     console.log("Creating and checking in new user:", newUser);
-                                    await CreateUser(newUser.full_name, newUser.name, newUser.username);
+                                    await CreateUser(newUser.full_name, newUser.username, newUser.division, newUser.tag ? parseInt(newUser.tag) : 0);
                                     setCheckedInPlayers(prev => new Set(prev).add(newUser.username));
                                     
                                     const newUserEntry: UserEntry = {
                                         _id: "",
                                         full_name: newUser.full_name,
-                                        name: newUser.name,
                                         username: newUser.username,
                                         has_checkin_today: 1,
-                                        division: "recreational",
+                                        division: newUser.division,
+                                        tag: newUser.tag ? parseInt(newUser.tag) : 0,
+                                        handicap: newUser.handicap,
                                     };
-                                    
-                                    await CheckInUser(newUser.username, "check-in", newUser.full_name, newUser.name);
+
+                                    await CheckInUser(newUser.username, "check-in", newUser.full_name, newUser.division);
                                     setPlayers(prev => [...prev, newUserEntry]);
-                                    setNewUser({ full_name: '', name: '', username: '' });
+                                    setNewUser({ full_name: '', division: '', username: '', tag: '', handicap: 0 });
                                     setSearchQuery("");
                                 }}
                                 className="w-full"

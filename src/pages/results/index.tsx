@@ -8,6 +8,7 @@ import type { ColumnDef } from "@tanstack/table-core";
 import { Button } from "@/components/ui/button";
 import { ArrowUpDown } from "lucide-react";
 import { CapitalizeWords } from "@/utils";
+import type { Event } from "@/types";
 
 const snakeCaseToColumnHeader = (snakeCaseString: string) => {
   if (!snakeCaseString) {
@@ -74,7 +75,7 @@ const divisions = [
   'recreational'
 ]
 
-const parseData = (data: ScoreEntry[], eventData: any): ParsedData => {
+const parseData = (data: ScoreEntry[], eventData: Event): ParsedData => {
   if (!data || data.length === 0) {
     return { keys: [], rows: [], data: [] };
   }
@@ -140,7 +141,7 @@ const ResultsPage = () => {
   const [playerDivisions, setPlayerDivisions] = React.useState<Record<string, TableData[]>>({});
   const [topSlug, setTopSlug] = React.useState<TableData>();
   const formattedDate = selectedDate.toISOString().split('T')[0];
-  const [eventData, setEventData] = React.useState<any>(null);
+  const [eventData, setEventData] = React.useState<Event>({} as Event);
   const [dualWinners, setDualWinners] = React.useState<Record<string, TableData[]>>({});
 
   const columns: ColumnDef<TableData, unknown>[] = [

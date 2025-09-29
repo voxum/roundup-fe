@@ -46,15 +46,15 @@ export async function FetchUsers(): Promise<UserEntry[]> {
   return response.json();
 }
 
-export async function CreateUser(full_name: string, name: string, username: string) {
-  console.log("Creating user:", { full_name, name, username });
+export async function CreateUser(full_name: string, username: string, division: string, tag: number) {
+  console.log("Creating user:", { full_name, username, division, tag });
   const response = await fetch(`${API_BASE_URL}/custom-users/`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Token ${TOKEN}`,
     },
-    body: JSON.stringify({ full_name, name, username }),
+    body: JSON.stringify({ full_name, username, division, tag }),
   });
   if (!response.ok) {
     throw new Error('Failed to create user');
