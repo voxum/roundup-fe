@@ -7,9 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown } from "lucide-react";
-const CapitalizeWords = (str: string) => {
-    return str.replace(/\b\w/g, char => char.toUpperCase());
-}
+import { CapitalizeWords } from "@/utils";
+
 const CheckInPage = () => {
     const [players, setPlayers] = React.useState<UserEntry[]>([]);
     const [loading, setLoading] = React.useState(true);
@@ -32,8 +31,19 @@ const CheckInPage = () => {
                 return CapitalizeWords(row.getValue("full_name"));
             }
         },
-        { accessorKey: "name", header: "Name" },
         { accessorKey: "username", header: "Username" },
+        {
+            accessorKey: "tag",
+            header: "Tag",
+        },
+        {
+            accessorKey: "division",
+            header: "Division",
+            cell: ({ row }) => {
+                const division = row.getValue("division");
+                return CapitalizeWords((division as string) || "");
+            }
+        },
         {
             accessorKey: "checkIn",
             header: "Check In",
@@ -188,7 +198,8 @@ const CheckInPage = () => {
                                         full_name: newUser.full_name,
                                         name: newUser.name,
                                         username: newUser.username,
-                                        has_checkin_today: 1
+                                        has_checkin_today: 1,
+                                        division: "recreational",
                                     };
                                     
                                     await CheckInUser(newUser.username, "check-in", newUser.full_name, newUser.name);

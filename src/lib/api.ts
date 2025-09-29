@@ -83,3 +83,16 @@ export async function CheckInUser(username: string, action: string, full_name: s
   }
   return response.json();
 }
+
+export async function FetchEventByDate(date: string) {
+  const response = await fetch(`${API_BASE_URL}/event-setup/${date}`, {
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Token ${TOKEN}`,
+    },
+  });
+  if (!response.ok) {
+    throw new Error('Failed to fetch event by date');
+  }
+  return response.json();
+}

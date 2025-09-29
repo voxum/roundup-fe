@@ -1,12 +1,14 @@
 import DataTable from "@/components/table";
 import DatePicker from "@/components/date-picker";
-import { FetchScores } from "@/lib/api";
+import { FetchScores, FetchEventByDate } from "@/lib/api";
 import { useEffect } from "react";
 import React from "react";
 import { BarLoader } from 'react-spinners';
 import type { ColumnDef } from "@tanstack/table-core";
+import { Button } from "@/components/ui/button";
+import { ArrowUpDown } from "lucide-react";
+import { CapitalizeWords } from "@/utils";
 
-// const card_id = "scorecard_entry_o8mthw2mcvzxw24irdn28j86";
 const snakeCaseToColumnHeader = (snakeCaseString: string) => {
   if (!snakeCaseString) {
     return "";
@@ -46,6 +48,10 @@ interface ScoreEntry {
     [key: string]: unknown;
   }>;
   [key: string]: unknown;
+  division?: string;
+  handicap?: string;
+  total_strokes?: number;
+  final_score?: number;
 }
 
 interface TableData {
@@ -62,21 +68,33 @@ interface ParsedData {
   data: TableData[];
 }
 
-const parseData = (data: ScoreEntry[]): ParsedData => {
+const divisions = [
+  'advanced',
+  'intermediate',
+  'recreational'
+]
+
+const parseData = (data: ScoreEntry[], eventData: any): ParsedData => {
   if (!data || data.length === 0) {
     return { keys: [], rows: [], data: [] };
   }
   
   const transformedData = data.map((entry: ScoreEntry): TableData => {
-    let totalStrokes = 0;
+    let total_strokes = 0;
+    let best_on_score = 0;
     
     if (Array.isArray(entry.scores?.hole_scores)) {
-      totalStrokes = entry.scores.hole_scores.reduce(
-        (sum: number, hole: HoleScore) => sum + (hole.strokes || 0), 
+      total_strokes = entry.scores.hole_scores.reduce(
+        (sum: number, hole: HoleScore) => sum + (hole.strokes || 0),
         0
       );
+      for (let x = 1; x < entry.scores.hole_scores.length + 1; x++) {
+        if(eventData?.best_on_holes.find((hole: number) => hole === x)) {
+          best_on_score += entry.scores.hole_scores[x - 1].strokes || 0
+        }
+      }
     } else if (Array.isArray(entry.hole_scores)) {
-      totalStrokes = entry.hole_scores.reduce(
+      total_strokes = entry.hole_scores.reduce(
         (sum: number, hole: HoleScore) => sum + (hole.strokes || 0), 
         0
       );
@@ -88,7 +106,10 @@ const parseData = (data: ScoreEntry[]): ParsedData => {
       card_id: entry.card_id,
       user_fullname: entry.user_fullname || entry.full_name || '',
       username: entry.username || '',
-      total_strokes: totalStrokes
+      total_strokes: total_strokes,
+      handicap: entry.handicap,
+      final_score: total_strokes - (entry.handicap ? parseInt(entry.handicap) : 0),
+      best_on_score: best_on_score - 15 // Assuming par 15 for best on holes
     };
   });
 
@@ -105,64 +126,124 @@ const parseData = (data: ScoreEntry[]): ParsedData => {
 };
 
 interface TableData {
-  start_date?: string;
-  card_id?: string;
   user_fullname?: string;
   username?: string;
   total_strokes: number;
+  handicap?: string;
+  final_score?: number;
   [key: string]: string | number | undefined;
 }
 
 const ResultsPage = () => {
   const [loading, setLoading] = React.useState(true);
-  const [data, setData] = React.useState<TableData[]>([]);
   const [selectedDate, setSelectedDate] = React.useState<Date>(new Date());
+  const [playerDivisions, setPlayerDivisions] = React.useState<Record<string, TableData[]>>({});
+  const [topSlug, setTopSlug] = React.useState<TableData>();
   const formattedDate = selectedDate.toISOString().split('T')[0];
+  const [eventData, setEventData] = React.useState<any>(null);
+  const [dualWinners, setDualWinners] = React.useState<Record<string, TableData[]>>({});
+
   const columns: ColumnDef<TableData, unknown>[] = [
     {
-      accessorKey: "start_date",
-      header: "Date"
-    },
-    {
       accessorKey: "user_fullname",
-      header: "Full Name",
+      header: "Name",
     },
     {
-      accessorKey: "username",
-      header: "Username"
+      accessorKey: "handicap",
+      header: "Handicap"
     },
     {
       accessorKey: "total_strokes",
-      header: "Total Strokes"
+      header: "Strokes"
+    },
+    {
+      accessorKey: "final_score",
+      header: ({ column }) => {
+          return (
+              <Button
+                  variant="ghost"
+                  onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                  >
+                  Final Score
+                  <ArrowUpDown className="ml-2 h-4 w-4" />
+              </Button>
+          )
+      },
+    },
+    {
+      accessorKey: "best_on_score",
+      header: "Best On"
     }
   ]
   
+  const fetchEventData = async () => {
+    try {
+      const response = await FetchEventByDate(formattedDate);
+      console.log("Event Data:", response);
+      setEventData(response);
+    } catch (error) {
+      console.error("Error fetching event data:", error);
+    }
+  }
+
   const fetchScoreData = async (date: string) => {
     setLoading(true);
-    console.log("Fetching Scores for date:", date);
     try {
       const response = await FetchScores('', date);
       console.log("API Response:", response);
       
       if (Array.isArray(response)) {
-        const parsedData = parseData(response);
+        const parsedData = parseData(response, eventData);
         console.log("Parsed Data:", parsedData);
-        setData(parsedData.data);
+        const divisionData: Record<string, TableData[]> = {};
+        let bestPlayer: TableData | undefined;
+
+        parsedData.data.forEach((tableData, index) => {
+          const score = response[index];
+          const division = score?.division || 'recreational';
+          
+          if (!divisionData[division]) {
+            divisionData[division] = [];
+          }
+          divisionData[division].push(tableData);
+
+        if (tableData.final_score !== undefined) {
+          if (!bestPlayer || tableData.final_score < bestPlayer.final_score!) {
+            bestPlayer = tableData;
+          }
+        }
+      });
+        for (const dual in eventData?.duels_of_the_day || []) {
+          const player1 = parsedData.data.find(player => player.username === eventData.duels_of_the_day[dual][1]);
+          const player2 = parsedData.data.find(player => player.username === eventData.duels_of_the_day[dual][2]);
+          if (player1 && player2) {
+            const winner = player1.total_strokes! < player2.total_strokes! ? player1 : player2;
+            setDualWinners(prev => ({...prev, [dual]: [winner]}));
+          }
+        }
+      setTopSlug(bestPlayer);
+      setPlayerDivisions(divisionData);
       } else {
         console.error("Unexpected response format:", response);
-        setData([]);
       }
     } catch (error) {
       console.error("Error fetching scores:", error);
-      setData([]);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchScoreData(formattedDate);
+    fetchEventData()
   }, [formattedDate]);
+
+  useEffect(() => {
+    fetchScoreData(formattedDate);
+  }, [eventData])
+
+  useEffect(() => {
+    console.log("Dual Winners Updated:", dualWinners);
+  }, [dualWinners]);
 
   return (
     <div className="overflow-x-hidden">
@@ -173,8 +254,7 @@ const ResultsPage = () => {
           </div>
         ) : (
           <>
-          <div className="flex">
-            <div className="ml-auto">
+            <div className="flex justify-end mb-4">
               <DatePicker 
                 title="Round Date" 
                 default_date={selectedDate} 
@@ -187,10 +267,42 @@ const ResultsPage = () => {
                 }} 
               />
             </div>
-          </div>
-            <div className="overflow-x-auto">
-              <DataTable columns={columns} data={data} />
+            <div className="flex flex-col items-center mb-4">
+              <span className="font-medium text-lg">Top Slug</span>
+              <span className="text-md">{topSlug ? `${topSlug?.user_fullname} (${topSlug?.final_score})` : ''}</span>
             </div>
+            <div className="flex flex-col items-center mb-4">
+              {Object.keys(dualWinners).length > 0 && <span className="font-medium text-lg">Duel of the Day Winners</span>}
+              {Object.entries(dualWinners).map(([duel, winners]) => (
+                <span key={duel} className="text-md">
+                  {CapitalizeWords(duel)}: {winners.map(winner => `${winner.user_fullname} (${winner.final_score})`).join(' & ')}
+                </span>
+              ))}
+            </div>
+            
+
+          <div className="mt-4">
+            <div className="space-y-8">
+              {divisions.map((division) => (
+                <div key={division} className="max-w-4xl mx-auto">
+                  <h2 className="text-xl font-semibold mb-3 text-center">
+                    {division.charAt(0).toUpperCase() + division.slice(1)} Division
+                  </h2>
+                  <div className="border rounded-lg shadow-sm">
+                    <div className="overflow-auto">
+                      <DataTable 
+                        columns={columns} 
+                        data={playerDivisions?.[division] || []} 
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="mt-4 flex justify-center">
+            <Button> Save Results </Button>
+          </div>
           </>
         )}
       </div>

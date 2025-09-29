@@ -2,6 +2,7 @@ import './App.css'
 import Score from './pages/scores'
 import ResultsPage from './pages/results'
 import CheckInPage from './pages/check-in';
+import SetupPage from './pages/setup';
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Navigation from './components/navigation';
 import HomePage from './pages/home';
@@ -17,6 +18,13 @@ function App() {
               <>
                 <Navigation />
                 <HomePage />
+              </>
+            } />
+          <Route path="/setup"
+          element={
+              <>
+                <Navigation />
+                <SetupPage />
               </>
             } />
           <Route path="/results" 

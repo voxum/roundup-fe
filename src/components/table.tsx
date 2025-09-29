@@ -38,6 +38,9 @@ function DataTable<TData, TValue>({
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     onSortingChange: setSorting,
+    initialState: {
+      pagination: { pageIndex: 0, pageSize: 10 }
+    },
     state: {
       sorting,
     },
