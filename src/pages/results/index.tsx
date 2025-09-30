@@ -1,5 +1,6 @@
 import DataTable from "@/components/table";
 import DatePicker from "@/components/date-picker";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { FetchScores, FetchEventByDate } from "@/lib/api";
 import { useEffect } from "react";
 import React from "react";
@@ -9,7 +10,6 @@ import { Button } from "@/components/ui/button";
 import { ArrowUpDown } from "lucide-react";
 import { CapitalizeWords } from "@/utils";
 import type { Event } from "@/types";
-
 
 const snakeCaseToColumnHeader = (snakeCaseString: string) => {
   if (!snakeCaseString) {
@@ -162,6 +162,14 @@ const ResultsPage = () => {
       header: "Strokes"
     },
     {
+      accessorKey: "tag",
+      header: "Tag"
+    },
+    {
+      accessorKey: "best_on_score",
+      header: "Best On"
+    },
+       {
       accessorKey: "final_score",
       header: ({ column }) => {
           return (
@@ -175,10 +183,6 @@ const ResultsPage = () => {
           )
       },
     },
-    {
-      accessorKey: "best_on_score",
-      header: "Best On"
-    }
   ]
   
   const fetchEventData = async () => {
@@ -218,16 +222,31 @@ const ResultsPage = () => {
           }
         }
       });
-        for (const dual in eventData?.duels_of_the_day || []) {
-          const player1 = parsedData.data.find(player => player.username === eventData.duels_of_the_day[dual][1]);
-          const player2 = parsedData.data.find(player => player.username === eventData.duels_of_the_day[dual][2]);
-          if (player1 && player2) {
-            const winner = player1.total_strokes! < player2.total_strokes! ? player1 : player2;
-            setDualWinners(prev => ({...prev, [dual]: [winner]}));
-          }
+      const dualWinnersLocal: Record<string, TableData[]> = {};
+
+      for (const dual in eventData?.duels_of_the_day || []) {
+        const player1 = parsedData.data.find(player => player.username === eventData.duels_of_the_day[dual][1]);
+        const player2 = parsedData.data.find(player => player.username === eventData.duels_of_the_day[dual][2]);
+        if (player1 && player2) {
+          const winner = player1.total_strokes! < player2.total_strokes! ? player1 : player2;
+          dualWinnersLocal[dual] = [winner];
         }
-       const bestOnWinnersLocal: Record<string, TableData[]> = {};
-      
+      }
+    
+    const sortedDualWinners: Record<string, TableData[]> = {};
+    Object.keys(dualWinnersLocal)
+      .sort((a, b) => {
+        const divisionA = dualWinnersLocal[a][0]?.division || '';
+        const divisionB = dualWinnersLocal[b][0]?.division || '';
+        return String(divisionA).localeCompare(String(divisionB));
+      })
+      .forEach(key => {
+        sortedDualWinners[key] = dualWinnersLocal[key];
+      });
+
+      setDualWinners(sortedDualWinners);
+      const bestOnWinnersLocal: Record<string, TableData[]> = {};
+
       for (const score of parsedData.data) {
         const division = score.division ?? '';
         
@@ -241,10 +260,8 @@ const ResultsPage = () => {
             
             if (typeof bestScore === 'number') {
               if (score.best_on_score < bestScore) {
-                // New best score - replace all winners
                 bestOnWinnersLocal[division] = [score];
               } else if (score.best_on_score === bestScore && currentWinners.length < 3) {
-                // Tied score and room for more winners
                 bestOnWinnersLocal[division] = [...currentWinners, score];
               }
             }
@@ -252,8 +269,15 @@ const ResultsPage = () => {
         }
       }
       
+      const sortedBestOnWinners: Record<string, TableData[]> = {};
+      Object.keys(bestOnWinnersLocal)
+        .sort((a, b) => a.localeCompare(b))
+        .forEach(key => {
+          sortedBestOnWinners[key] = bestOnWinnersLocal[key];
+        });
+
       // Set the state once with the complete object
-      setBestOnWinners(bestOnWinnersLocal);
+      setBestOnWinners(sortedBestOnWinners);
       setTopSlug(bestPlayer);
       setPlayerDivisions(divisionData);
       } else {
@@ -281,14 +305,6 @@ const ResultsPage = () => {
     fetchScoreData(formattedDate);
   }, [eventData])
 
-  useEffect(() => {
-    console.log("Dual Winners Updated:", dualWinners);
-  }, [dualWinners]);
-
-  useEffect(() => {
-    console.log("Best On Winners Updated:", bestOnWinners);
-  }, [bestOnWinners]);
-
   return (
     <div className="overflow-x-hidden">
       <div className="p-4">
@@ -313,27 +329,59 @@ const ResultsPage = () => {
               />
             </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div className="flex flex-col items-center">
+                  {Object.keys(topSlug || {}).length > 0 && (
+                    <Card className="w-full max-w-sm h-50">
+                      <CardHeader> 
+                        <CardTitle className="text-center">Top Slug</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <span className="text-md">
+                          {topSlug ? `${topSlug?.user_fullname} (${topSlug?.final_score})` : ''}
+                          </span>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+
               <div className="flex flex-col items-center">
-                {Object.keys(topSlug || {}).length > 0 && <span className="font-medium text-lg">Top Slug</span>}
-                <span className="text-md">{topSlug ? `${topSlug?.user_fullname} (${topSlug?.final_score})` : ''}</span>
+                {Object.keys(dualWinners).length > 0 && (
+                  <Card className="w-full max-w-sm h-50">
+                    <CardHeader> 
+                      <CardTitle className="text-center">Duel of the Day Winners</CardTitle>
+                    </CardHeader>
+                    <CardContent className="flex flex-col space-y-3">
+                      {Object.entries(dualWinners).map(([duel, winners]) => (
+                        <div key={duel} className="text-center">
+                          <div className="font-semibold text-sm">{CapitalizeWords(duel)}</div>
+                          <div className="text-md">
+                            {winners.map(winner => `${winner.user_fullname} (${winner.final_score})`).join(' & ')}
+                          </div>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                )}
               </div>
               
               <div className="flex flex-col items-center">
-                {Object.keys(dualWinners).length > 0 && <span className="font-medium text-lg">Duel of the Day Winners</span>}
-                {Object.entries(dualWinners).map(([duel, winners]) => (
-                  <span key={duel} className="text-md">
-                    {CapitalizeWords(duel)}: {winners.map(winner => `${winner.user_fullname} (${winner.final_score})`).join(' & ')}
-                  </span>
-                ))}
-              </div>
-              
-              <div className="flex flex-col items-center">
-                {Object.keys(bestOnWinners).length > 0 && <span className="font-medium text-lg">Best On Winners</span>}
-                {Object.entries(bestOnWinners).map(([division, winners]) => (
-                  <span key={division} className="text-md">
-                    {CapitalizeWords(division)}: {winners.map(winner => `${winner.user_fullname} (${winner.best_on_score})`).join(' & ')}
-                  </span>
-                ))}
+                {Object.keys(bestOnWinners).length > 0 && (
+                  <Card className="w-full max-w-sm h-50">
+                    <CardHeader>
+                      <CardTitle className="text-center">Best On Winners</CardTitle>
+                    </CardHeader>
+                    <CardContent className="flex flex-col space-y-2">
+                      {Object.entries(bestOnWinners).map(([division, winners]) => (
+                        <div key={division} className="text-center">
+                          <div className="font-semibold text-sm">{CapitalizeWords(division)}</div>
+                          <div className="text-md">
+                            {winners.map(winner => `${winner.user_fullname} (${winner.best_on_score})`).join(' & ')}
+                          </div>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                )}
               </div>
             </div>
             
