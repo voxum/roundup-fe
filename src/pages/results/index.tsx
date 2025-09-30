@@ -1,7 +1,7 @@
 import DataTable from "@/components/table";
 import DatePicker from "@/components/date-picker";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { FetchScores, FetchEventByDate } from "@/lib/api";
+import { FetchScores, FetchEventByDate, FetchAvailableTagsByDate } from "@/lib/api";
 import { useEffect } from "react";
 import React from "react";
 import { BarLoader } from 'react-spinners';
@@ -290,6 +290,15 @@ const ResultsPage = () => {
     }
   };
 
+  const fetchAvailableTags = async (date: string) => {
+    try {
+      const response = await FetchAvailableTagsByDate(date);
+      console.log("Available Tags:", response);
+    } catch (error) {
+      console.error("Error fetching available tags:", error);
+    }
+  }
+
   const resetState = () => {
     setPlayerDivisions({});
     setTopSlug(undefined);
@@ -303,6 +312,7 @@ const ResultsPage = () => {
 
   useEffect(() => {
     fetchScoreData(formattedDate);
+    fetchAvailableTags(formattedDate);
   }, [eventData])
 
   return (

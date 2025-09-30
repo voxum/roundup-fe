@@ -9,12 +9,15 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown } from "lucide-react";
 import { CapitalizeWords } from "@/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import DatePicker from "@/components/date-picker";
 
 const CheckInPage = () => {
     const [players, setPlayers] = React.useState<UserEntry[]>([]);
     const [loading, setLoading] = React.useState(true);
     const [searchQuery, setSearchQuery] = useState("");
     const [checkedInPlayers, setCheckedInPlayers] = useState<Set<string>>(new Set());
+    const [selectedDate, setSelectedDate] = React.useState<Date>(new Date());
+    
     const columns: ColumnDef<UserEntry, unknown>[] = [
         { accessorKey: "full_name",
             header: ({ column }) => {
@@ -133,7 +136,20 @@ const CheckInPage = () => {
     <div className="p-4">
     {/* Searchable Table */}
     <div className="mb-6">
-        <h2 className="text-xl font-semibold mb-2">Search Users</h2>
+        <div className="flex justify-end mb-4">
+                <DatePicker 
+                    title="Round Date" 
+                    default_date={selectedDate} 
+                    changeHandler={(date) => {
+                        if (date) {
+                        setSelectedDate(date);
+                        const formattedDate = date.toISOString().split('T')[0];
+                        console.log("Selected date:", formattedDate);
+                        }
+                    }} 
+                />
+        </div>
+        <h2 className="text-xl font-semibold mb-2"> Search Users </h2>
         <input
             type="text"
             placeholder="Search by name or username"
@@ -145,8 +161,7 @@ const CheckInPage = () => {
             <p>Loading users...</p>
         ) : (
             <>
-                <DataTable columns={columns} data={filteredPlayers} />
-                
+                <DataTable columns={columns} data={filteredPlayers} />                
                 {filteredPlayers.length === 0 && (
                     <div className="mt-4 p-4 border rounded-md">
                         <h3 className="text-lg font-medium mb-3">Add New User</h3>
