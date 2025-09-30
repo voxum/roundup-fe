@@ -82,12 +82,12 @@ const CheckInPage = () => {
                 newSet.delete(row.username);
                 return newSet;
             });
-            await CheckInUser(row.username, "remove", row.full_name, row.name);
+            await CheckInUser(row.username, "remove", row.tag);
             return;
         }
         console.log("Check-in button clicked for:", row);
         setCheckedInPlayers(prev => new Set(prev).add(row.username));
-        await CheckInUser(row.username, "check-in", row.full_name, row.name);
+        await CheckInUser(row.username, "check-in", row.tag);
     };
     
     const filteredPlayers = players.filter(player =>
@@ -234,7 +234,7 @@ const CheckInPage = () => {
                                         handicap: newUser.handicap,
                                     };
 
-                                    await CheckInUser(newUser.username, "check-in", newUser.full_name, newUser.division);
+                                    await CheckInUser(newUser.username, "check-in", newUser.tag ? parseInt(newUser.tag) : 0);
                                     setPlayers(prev => [...prev, newUserEntry]);
                                     setNewUser({ full_name: '', division: '', username: '', tag: '', handicap: 0 });
                                     setSearchQuery("");

@@ -62,7 +62,7 @@ export async function CreateUser(full_name: string, username: string, division: 
   return response.json();
 }
 
-export async function CheckInUser(username: string, action: string, full_name: string = '', name: string = '') {
+export async function CheckInUser(username: string, action: string, tag?: number) {
   const endpoint = action === 'check-in' ? '' : 'remove/';
   const url = `${API_BASE_URL}/checkins/${endpoint}`;
   const response = await fetch(url, {
@@ -74,8 +74,7 @@ export async function CheckInUser(username: string, action: string, full_name: s
     body: JSON.stringify({ 
       username,
       date: new Date().toISOString().split('T')[0],
-      full_name,
-      name
+      tag
     }),
   });
   if (!response.ok) {
