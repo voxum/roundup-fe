@@ -137,6 +137,7 @@ const SetupPage = () => {
                         
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <Button 
+                                disabled={loading || Object.keys(playerDivisions).length === 0}
                                 className="bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transform hover:scale-105 transition-all duration-200"
                                 onClick={() => {
                                     if(Object.keys(duels).length > 0) {
