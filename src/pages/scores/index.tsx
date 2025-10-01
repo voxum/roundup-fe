@@ -1,4 +1,3 @@
-// import { Input } from "./ui/input";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState, useRef } from "react";
@@ -120,7 +119,6 @@ const Score = () => {
     resetVariables();
 
     // Check if the card was already submitted today if so show a toast message and return
-
     if(!ws) {
       const ws_id = generateWebSocketId(true);
       const new_ws = new WebSocket(`wss://sync.udisc.com/sockjs/${ws_id}/websocket`);

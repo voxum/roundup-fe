@@ -96,8 +96,8 @@ export async function FetchEventByDate(date: string) {
   return response.json();
 }
 
-export async function FetchAvailableTagsByDate(date: string) {
-  const response = await fetch(`${API_BASE_URL}/checkins/available_tags_by_date?date=${date}`, {
+export async function FetchCheckins(date: string) {
+  const response = await fetch(`${API_BASE_URL}/checkins/by_date?date=${date}`, {
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Token ${TOKEN}`,

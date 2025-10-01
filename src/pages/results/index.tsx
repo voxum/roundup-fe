@@ -1,17 +1,17 @@
 import DataTable from "@/components/table";
 import DatePicker from "@/components/date-picker";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { FetchScores, FetchEventByDate, FetchAvailableTagsByDate } from "@/lib/api";
+import { FetchScores, FetchEventByDate, FetchCheckins } from "@/lib/api";
 import { useEffect } from "react";
 import React from "react";
 import { BarLoader } from 'react-spinners';
 import type { ColumnDef } from "@tanstack/table-core";
 import { Button } from "@/components/ui/button";
-import { ArrowUpDown } from "lucide-react";
+import { ArrowUpDown, Trophy, Target, Zap } from "lucide-react";
 import { CapitalizeWords } from "@/utils";
 import type { Event } from "@/types";
 
-const snakeCaseToColumnHeader = (snakeCaseString: string) => {
+const SnakeCaseToColumnHeader = (snakeCaseString: string) => {
   if (!snakeCaseString) {
     return "";
   }
@@ -117,7 +117,7 @@ const parseData = (data: ScoreEntry[], eventData: Event): ParsedData => {
   });
 
   const keys = transformedData.length > 0 ? 
-    Object.keys(transformedData[0]).map(snakeCaseToColumnHeader) : [];
+    Object.keys(transformedData[0]).map(SnakeCaseToColumnHeader) : [];
   
   const rows = transformedData.map((entry) => 
     Object.values(entry).map(value => {
@@ -292,7 +292,7 @@ const ResultsPage = () => {
 
   const fetchAvailableTags = async (date: string) => {
     try {
-      const response = await FetchAvailableTagsByDate(date);
+      const response = await FetchCheckins(date);
       console.log("Available Tags:", response);
     } catch (error) {
       console.error("Error fetching available tags:", error);
@@ -316,7 +316,7 @@ const ResultsPage = () => {
   }, [eventData])
 
   return (
-    <div className="overflow-x-hidden">
+    <div className="overflow-x-hidden min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
       <div className="p-4">
         {loading ? (
           <div className="flex justify-center items-center h-screen">
@@ -341,14 +341,26 @@ const ResultsPage = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 <div className="flex flex-col items-center">
                   {Object.keys(topSlug || {}).length > 0 && (
-                    <Card className="w-full max-w-sm h-50">
-                      <CardHeader> 
-                        <CardTitle className="text-center">Top Slug</CardTitle>
+                    <Card className="w-full max-w-sm bg-gradient-to-br from-yellow-50 to-amber-100 border-2 border-yellow-300 shadow-lg">
+                      <CardHeader className="text-center pb-2"> 
+                        <div className="flex items-center justify-center space-x-2">
+                          <Trophy className="h-6 w-6 text-yellow-600" />
+                          <CardTitle className="text-xl font-bold text-yellow-800">Top Slug</CardTitle>
+                          <Trophy className="h-6 w-6 text-yellow-600" />
+                        </div>
                       </CardHeader>
-                      <CardContent>
-                        <span className="text-md">
-                          {topSlug ? `${topSlug?.user_fullname} (${topSlug?.final_score})` : ''}
-                          </span>
+                      <CardContent className="text-center pb-4">
+                        <div className="bg-white bg-opacity-50 rounded-lg p-2">
+                          <div className="text-lg font-semibold text-yellow-900">
+                            {topSlug?.user_fullname}
+                          </div>
+                          <div className="text-2xl font-bold text-yellow-700 mt-1">
+                            {topSlug?.final_score}
+                          </div>
+                          <div className="text-xs text-yellow-600 mt-1">
+                            Best Overall Score
+                          </div>
+                        </div>
                       </CardContent>
                     </Card>
                   )}
@@ -356,15 +368,19 @@ const ResultsPage = () => {
 
               <div className="flex flex-col items-center">
                 {Object.keys(dualWinners).length > 0 && (
-                  <Card className="w-full max-w-sm h-50">
-                    <CardHeader> 
-                      <CardTitle className="text-center">Duel of the Day Winners</CardTitle>
+                  <Card className="w-full max-w-sm bg-gradient-to-br from-blue-50 to-indigo-100 border-2 border-blue-300 shadow-lg">
+                    <CardHeader className="text-center pb-2"> 
+                      <div className="flex items-center justify-center space-x-2">
+                        <Zap className="h-6 w-6 text-blue-600" />
+                        <CardTitle className="text-xl font-bold text-blue-800">Duel Winners</CardTitle>
+                        <Zap className="h-6 w-6 text-blue-600" />
+                      </div>
                     </CardHeader>
-                    <CardContent className="flex flex-col space-y-3">
+                    <CardContent className="flex flex-col space-y-3 pb-4">
                       {Object.entries(dualWinners).map(([duel, winners]) => (
-                        <div key={duel} className="text-center">
-                          <div className="font-semibold text-sm">{CapitalizeWords(duel)}</div>
-                          <div className="text-md">
+                        <div key={duel} className="text-center bg-white bg-opacity-50 rounded-lg p-2">
+                          <div className="font-semibold text-sm text-blue-700 mb-1">{CapitalizeWords(duel)}</div>
+                          <div className="text-sm font-medium text-blue-900 break-words">
                             {winners.map(winner => `${winner.user_fullname} (${winner.final_score})`).join(' & ')}
                           </div>
                         </div>
@@ -376,15 +392,19 @@ const ResultsPage = () => {
               
               <div className="flex flex-col items-center">
                 {Object.keys(bestOnWinners).length > 0 && (
-                  <Card className="w-full max-w-sm h-50">
-                    <CardHeader>
-                      <CardTitle className="text-center">Best On Winners</CardTitle>
+                  <Card className="w-full max-w-sm bg-gradient-to-br from-green-50 to-emerald-100 border-2 border-green-300 shadow-lg">
+                    <CardHeader className="text-center pb-2">
+                      <div className="flex items-center justify-center space-x-2">
+                        <Target className="h-6 w-6 text-green-600" />
+                        <CardTitle className="text-xl font-bold text-green-800">Best On Winners</CardTitle>
+                        <Target className="h-6 w-6 text-green-600" />
+                      </div>
                     </CardHeader>
-                    <CardContent className="flex flex-col space-y-2">
+                    <CardContent className="flex flex-col space-y-2 pb-4">
                       {Object.entries(bestOnWinners).map(([division, winners]) => (
-                        <div key={division} className="text-center">
-                          <div className="font-semibold text-sm">{CapitalizeWords(division)}</div>
-                          <div className="text-md">
+                        <div key={division} className="text-center bg-white bg-opacity-50 rounded-lg p-2">
+                          <div className="font-semibold text-sm text-green-700 mb-1">{CapitalizeWords(division)}</div>
+                          <div className="text-sm font-medium text-green-900 break-words">
                             {winners.map(winner => `${winner.user_fullname} (${winner.best_on_score})`).join(' & ')}
                           </div>
                         </div>
@@ -395,27 +415,44 @@ const ResultsPage = () => {
               </div>
             </div>
             
-          <div className="mt-4">
+          <div className="mt-8">
             <div className="space-y-8">
-              {divisions.map((division) => (
-                <div key={division} className="max-w-4xl mx-auto">
-                  <h2 className="text-xl font-semibold mb-3 text-center">
-                    {division.charAt(0).toUpperCase() + division.slice(1)} Division
-                  </h2>
-                  <div className="border rounded-lg shadow-sm">
-                    <div className="overflow-auto">
-                      <DataTable 
-                        columns={columns} 
-                        data={playerDivisions?.[division] || []} 
-                      />
+              {divisions.map((division) => {
+                const divisionColors = {
+                  advanced: 'from-red-50 to-rose-100 border-red-200',
+                  intermediate: 'from-orange-50 to-amber-100 border-orange-200', 
+                  recreational: 'from-purple-50 to-violet-100 border-purple-200'
+                };
+                const textColors = {
+                  advanced: 'text-red-800',
+                  intermediate: 'text-orange-800',
+                  recreational: 'text-purple-800'
+                };
+                
+                return (
+                  <div key={division} className="max-w-6xl mx-auto">
+                    <div className={`bg-gradient-to-r ${divisionColors[division as keyof typeof divisionColors]} rounded-lg p-6 shadow-lg border-2`}>
+                      <h2 className={`text-2xl font-bold mb-4 text-center ${textColors[division as keyof typeof textColors]}`}>
+                        🏆 {division.charAt(0).toUpperCase() + division.slice(1)} Division
+                      </h2>
+                      <div className="bg-white rounded-lg shadow-inner border">
+                        <div className="overflow-auto">
+                          <DataTable 
+                            columns={columns} 
+                            data={playerDivisions?.[division] || []} 
+                          />
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
-          <div className="mt-4 flex justify-center">
-            <Button> Save Results </Button>
+          <div className="mt-8 flex justify-center">
+            <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-3 px-8 rounded-lg shadow-lg transform hover:scale-105 transition-all duration-200"> 
+              💾 Save Results 
+            </Button>
           </div>
           </>
         )}
