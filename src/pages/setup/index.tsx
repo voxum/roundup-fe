@@ -3,6 +3,7 @@ import React, { useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FetchCheckins } from "@/lib/api";
 import { Settings, Zap, Target, Save } from "lucide-react";
+import { CapitalizeWords } from "@/utils";
 
 interface PlayersCheckedIn {
     date: string;
@@ -89,7 +90,7 @@ const SetupPage = () => {
                                                         <div className="grid grid-cols-1 gap-2">
                                                             {players.map((player) => (
                                                                 <div key={player.id} className="bg-white p-2 rounded border border-orange-200">
-                                                                    <span className="font-medium text-orange-700">#{player.tag}</span> - {player.full_name}
+                                                                    <span className="font-medium text-orange-700">#{player.tag}</span> - {CapitalizeWords(player.full_name)}
                                                                     <span className="text-xs text-orange-600 ml-2">(HC: {player.handicap})</span>
                                                                 </div>
                                                             ))}
